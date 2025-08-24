@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback, useTransition } from 'react';
-import { UploadCloud, Plus, Loader2, Sparkles, AlertCircle } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { UploadCloud, Plus, Loader2, Sparkles, AlertCircle, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -38,12 +38,13 @@ export function FileManagement() {
   const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
 
-  const addFile = useCallback((file: Omit<FileData, 'id' | 'description' | 'status'>) => {
+  const addFile = useCallback((file: Omit<FileData, 'id' | 'description' | 'status'>, originalFile?: File) => {
     const newFile: FileData = {
       ...file,
       id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      description: 'File uploaded successfully.',
+      description: 'File processed successfully.',
       status: 'uploading',
+      url: file.source === 'remote' ? file.url : originalFile ? URL.createObjectURL(originalFile) : undefined
     };
     setFiles(prev => [newFile, ...prev]);
 
@@ -63,7 +64,7 @@ export function FileManagement() {
             size: formatBytes(file.size),
             type: getFileType(file.name),
             source: 'local',
-        });
+        }, file);
       });
       e.dataTransfer.clearData();
     }
@@ -80,6 +81,7 @@ export function FileManagement() {
         size: 'N/A',
         type: getFileType(fileName),
         source: 'remote',
+        url: remoteUrl,
     });
     setRemoteUrl('');
   };
@@ -104,7 +106,7 @@ export function FileManagement() {
           <input id="file-upload-input" type="file" multiple className="hidden" onChange={(e) => {
               if (e.target.files) {
                   Array.from(e.target.files).forEach(file => {
-                      addFile({ name: file.name, size: formatBytes(file.size), type: getFileType(file.name), source: 'local' });
+                      addFile({ name: file.name, size: formatBytes(file.size), type: getFileType(file.name), source: 'local' }, file);
                   });
               }
           }} />
@@ -157,6 +159,11 @@ export function FileManagement() {
                         {file.status === 'uploading' && <><Loader2 className="w-4 h-4 animate-spin" /> <span className="text-sm text-muted-foreground">Uploading...</span></>}
                         {file.status === 'describing' && <><Sparkles className="w-4 h-4 text-primary animate-pulse" /> <span className="text-sm text-muted-foreground">Generating...</span></>}
                         {file.status === 'error' && <><AlertCircle className="w-4 h-4 text-destructive" /> <span className="text-sm text-destructive">Error</span></>}
+                        {file.status === 'complete' && file.url && (
+                            <Button asChild variant="outline" size="icon">
+                                <a href={file.url} download={file.name}><Download /></a>
+                            </Button>
+                        )}
                         </div>
                     </CardContent>
                     {(file.status === 'complete' || file.status === 'error') && file.description && (

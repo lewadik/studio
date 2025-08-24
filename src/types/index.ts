@@ -8,4 +8,5 @@ export type FileData = {
   description: string;
   status: 'uploading' | 'complete' | 'error';
   source: 'local' | 'remote';
+  url?: string;
 };
