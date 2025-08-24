@@ -6,6 +6,6 @@ export type FileData = {
   size: string;
   type: FileType;
   description: string;
-  status: 'uploading' | 'describing' | 'complete' | 'error';
+  status: 'uploading' | 'complete' | 'error';
   source: 'local' | 'remote';
 };

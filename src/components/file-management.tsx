@@ -9,7 +9,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { generateFileDescription } from '@/ai/flows/generate-file-description';
 import type { FileData, FileType } from '@/types';
 import { FileIcon } from './file-icon';
 
@@ -37,44 +36,21 @@ export function FileManagement() {
   const [files, setFiles] = useState<FileData[]>([]);
   const [remoteUrl, setRemoteUrl] = useState('');
   const [isDragging, setIsDragging] = useState(false);
-  const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  const handleGenerateDescription = useCallback(async (fileId: string, fileName: string) => {
-    try {
-      const result = await generateFileDescription({
-        fileName: fileName,
-        fileContent: `This is a mock content for file ${fileName}. In a real app, this would be the actual file content.`,
-      });
-      setFiles(prev =>
-        prev.map(f =>
-          f.id === fileId ? { ...f, description: result.description, status: 'complete' } : f
-        )
-      );
-    } catch (error) {
-      console.error('Error generating description:', error);
-      setFiles(prev =>
-        prev.map(f => (f.id === fileId ? { ...f, status: 'error', description: 'Failed to generate description.' } : f))
-      );
-    }
-  }, []);
-  
   const addFile = useCallback((file: Omit<FileData, 'id' | 'description' | 'status'>) => {
     const newFile: FileData = {
       ...file,
       id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-      description: '',
+      description: 'File uploaded successfully.',
       status: 'uploading',
     };
     setFiles(prev => [newFile, ...prev]);
 
     setTimeout(() => {
-        setFiles(prev => prev.map(f => f.id === newFile.id ? {...f, status: 'describing'} : f));
-        startTransition(() => {
-            handleGenerateDescription(newFile.id, newFile.name);
-        });
+        setFiles(prev => prev.map(f => f.id === newFile.id ? {...f, status: 'complete'} : f));
     }, 1500); // Simulate upload time
-  }, [handleGenerateDescription]);
+  }, []);
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
